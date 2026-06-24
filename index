@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>末世文游 - 手机编辑器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 15px;
+        }
+        .tab-bar {
+            display: flex;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .tab {
+            flex: 1;
+            padding: 12px 0;
+            text-align: center;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .tab.active {
+            border-bottom-color: #e63946;
+            color: #e63946;
+        }
+        .panel {
+            display: none;
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        .panel.active {
+            display: block;
+        }
+        h3 {
+            margin: 10px 0;
+            color: #333;
+            font-size: 18px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .option-card {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #e63946;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        button.secondary {
+            background: #444;
+        }
+        .scene-item {
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .scene-item .name {
+            font-size: 15px;
+        }
+        .scene-item .actions {
+            display: flex;
+            gap: 5px;
+        }
+        .scene-item button {
+            width: auto;
+            padding: 5px 8px;
+            font-size: 12px;
+            margin: 0;
+        }
+        .game-container {
+            background: #1a1a1a;
+            color: #f1faee;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .game-status {
+            padding: 10px;
+            background: #2d2d2d;
+            font-size: 14px;
+        }
+        .game-scene {
+            padding: 15px;
+            line-height: 1.6;
+        }
+        .game-options button {
+            background: #333;
+            text-align: left;
+            padding: 12px;
+            margin: 0 15px 8px;
+            border: 1px solid #444;
+        }
+        .game-backpack {
+            padding: 15px;
+            background: #2d2d2d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 标签切换 -->
+    <div class="tab-bar">
+        <div class="tab active" onclick="switchTab('editor')">编辑器</div>
+        <div class="tab" onclick="switchTab('game')">游戏预览</div>
+        <div class="tab" onclick="switchTab('export')">导出代码</div>
+    </div>
+
+    <!-- 编辑器面板 -->
+    <div class="panel active" id="editorPanel">
+        <h3>编辑场景</h3>
+        <div class="form-group">
+            <label>场景ID（英文/数字，如start）</label>
+            <input type="text" id="sceneId" placeholder="唯一标识">
+        </div>
+        <div class="form-group">
+            <label>场景标题</label>
+            <input type="text" id="sceneHeader" placeholder="如：初始废墟">
+        </div>
+        <div class="form-group">
+            <label>位置信息</label>
+            <input type="text" id="sceneLocation" placeholder="如：坐标：未知区域">
+        </div>
+        <div class="form-group">
+            <label>场景文本</label>
+            <textarea id="sceneText" placeholder="描述场景内容..."></textarea>
+        </div>
+
+        <h3>选项设置</h3>
+        <div id="optionsContainer">
+            <div class="option-card">
+                <div class="form-group">
+                    <label>选项文本</label>
+                    <input type="text" class="optionText" placeholder="如：前往塔楼">
+                </div>
+                <div class="form-group">
+                    <label>跳转场景ID</label>
+                    <input type="text" class="optionNextScene" placeholder="目标场景ID">
+                </div>
+                <div class="form-group">
+                    <label>数值效果（hp:-5,好感度:+10）</label>
+                    <input type="text" class="optionEffect" placeholder="键值对用逗号分隔">
+                </div>
+                <div class="form-group">
+                    <label>解锁条件（hp:50,好感度:20）</label>
+                    <input type="text" class="optionRequired" placeholder="无则留空">
+                </div>
+            </div>
+        </div>
+        <button onclick="addOption()">+ 添加选项</button>
+        <button onclick="saveScene()">保存场景</button>
+
+        <h3>已保存场景</h3>
+        <div id="savedScenes"></div>
+    </div>
+
+    <!-- 游戏预览面板 -->
+    <div class="panel" id="gamePanel">
+        <div class="game-container">
+            <div class="game-status" id="gameStatus">
+                生命值: 100 | 体力: 80
+            </div>
+            <div class="game-scene" id="gameScene">
+                请在编辑器中添加初始场景（ID为start）
+            </div>
+            <div class="game-options" id="gameOptions"></div>
+            <div class="game-backpack" id="gameBackpack">
+                背包: 生锈的短刀
+            </div>
+        </div>
+        <button onclick="initGame()">开始游戏</button>
+    </div>
+
+    <!-- 导出代码面板 -->
+    <div class="panel" id="exportPanel">
+        <h3>复制下面的代码分享给朋友</h3>
+        <textarea id="exportCode" style="width:100%; min-height:200px; font-size:12px;"></textarea>
+        <button onclick="generateExportCode()">生成代码</button>
+        <button class="secondary" onclick="copyExportCode()">复制代码</button>
+    </div>
+
+    <script>
+        // 全局数据
+        let storyData = JSON.parse(localStorage.getItem('apocStoryData') || '{}');
+        let gameState = {
+            playerStats: { hp: 100, stamina: 80 },
+            npcFavor: {},
+            backpack: [{ id: "knife", name: "生锈的短刀" }],
+            currentScene: "start"
+        };
+
+        // 切换标签页
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+            document.querySelector(`.tab[onclick*="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}Panel`).classList.add('active');
+        }
+
+        // 编辑器功能
+        function showSavedScenes() {
+            const container = document.getElementById('savedScenes');
+            container.innerHTML = '';
+            Object.keys(storyData).forEach(sceneId => {
+                const scene = storyData[sceneId];
+                const div = document.createElement('div');
+                div.className = 'scene-item';
+                div.innerHTML = `
+                    <div class="name">${scene.header || sceneId}</div>
+                    <div class="actions">
+                        <button onclick="loadScene('${sceneId}')">改</button>
+                        <button onclick="deleteScene('${sceneId}')">删</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addOption() {
+            const container = document.getElementById('optionsContainer');
+            const div = document.createElement('div');
+            div.className = 'option-card';
+            div.innerHTML = `
+                <div class="form-group">
+                    <label>选项文本</label>
+                    <input type="text" class="optionText" placeholder="如：前往塔楼">
+                </div>
+                <div class="form-group">
+                    <label>跳转场景ID</label>
+                    <input type="text" class="optionNextScene" placeholder="目标场景ID">
+                </div>
+                <div class="form-group">
+                    <label>数值效果</label>
+                    <input type="text" class="optionEffect" placeholder="hp:-5,好感度:+10">
+                </div>
+                <div class="form-group">
+                    <label>解锁条件</label>
+                    <input type="text" class="optionRequired" placeholder="hp:50">
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function parseEffect(str) {
+            if (!str.trim()) return {};
+            const effect = {};
+            str.split(',').forEach(pair => {
+                const [key, value] = pair.split(':');
+                if (key && value) effect[key.trim()] = Number(value.trim());
+            });
+            return effect;
+        }
+
+        function saveScene() {
+            const sceneId = document.getElementById('sceneId').value.trim();
+            if (!sceneId) {
+                alert('请输入场景ID');
+                return;
+            }
+
+            const options = [];
+            document.querySelectorAll('.option-card').forEach(card => {
+                const text = card.querySelector('.optionText').value.trim();
+                const nextScene = card.querySelector('.optionNextScene').value.trim();
+                if (!text || !nextScene) return;
+
+                options.push({
+                    text,
+                    nextScene,
+                    effect: parseEffect(card.querySelector('.optionEffect').value),
+                    required: parseEffect(card.querySelector('.optionRequired').value)
+                });
+            });
+
+            storyData[sceneId] = {
+                header: document.getElementById('sceneHeader').value.trim(),
+                location: document.getElementById('sceneLocation').value.trim(),
+                text: document.getElementById('sceneText').value.trim(),
+                options: options
+            };
+
+            localStorage.setItem('apocStoryData', JSON.stringify(storyData));
+            alert('保存成功！');
+            showSavedScenes();
+        }
+
+        function loadScene(sceneId) {
+            const scene = storyData[sceneId];
+            document.getElementById('sceneId').value = sceneId;
+            document.getElementById('sceneHeader').value = scene.header || '';
+            document.getElementById('sceneLocation').value = scene.location || '';
+            document.getElementById('sceneText').value = scene.text || '';
+
+            document.getElementById('optionsContainer').innerHTML = '';
+            scene.options.forEach(option => {
+                const effectStr = Object.entries(option.effect).map(([k, v]) => `${k}:${v}`).join(',');
+                const requiredStr = Object.entries(option.required).map(([k, v]) => `${k}:${v}`).join(',');
+                
+                const div = document.createElement('div');
+                div.className = 'option-card';
+                div.innerHTML = `
+                    <div class="form-group">
+                        <label>选项文本</label>
+                        <input type="text" class="optionText" value="${option.text}">
+                    </div>
+                    <div class="form-group">
+                        <label>跳转场景ID</label>
+                        <input type="text" class="optionNextScene" value="${option.nextScene}">
+                    </div>
+                    <div class="form-group">
+                        <label>数值效果</label>
+                        <input type="text" class="optionEffect" value="${effectStr}">
+                    </div>
+                    <div class="form-group">
+                        <label>解锁条件</label>
+                        <input type="text" class="optionRequired" value="${requiredStr}">
+                    </div>
+                `;
+                document.getElementById('optionsContainer').appendChild(div);
+            });
+        }
+
+        function deleteScene(sceneId) {
+            if (confirm('确定删除？')) {
+                delete storyData[sceneId];
+                localStorage.setItem('apocStoryData', JSON.stringify(storyData));
+                showSavedScenes();
+            }
+        }
+
+        // 游戏预览功能
+        function initGame() {
+            gameState = {
+                playerStats: { hp: 100, stamina: 80 },
+                npcFavor: {},
+                backpack: [{ id: "knife", name: "生锈的短刀" }],
+                currentScene: "start"
+            };
+
+            const allNpcs = new Set();
+            Object.values(storyData).forEach(scene => {
+                scene.options.forEach(option => {
+                    if (option.effect) {
+                        Object.keys(option.effect).forEach(key => {
+                            if (!gameState.playerStats.hasOwnProperty(key)) {
+                                allNpcs.add(key);
+                            }
+                        });
+                    }
+                });
+            });
+            allNpcs.forEach(npc => gameState.npcFavor[npc] = 0);
+
+            loadGameScene(gameState.currentScene);
+        }
+
+        function loadGameScene(sceneId) {
+            const scene = storyData[sceneId];
+            if (!scene) {
+                document.getElementById('gameScene').innerText = '未找到场景，请先编辑场景';
+                document.getElementById('gameOptions').innerHTML = '';
+                return;
+            }
+
+            gameState.currentScene = sceneId;
+            document.getElementById('gameScene').innerText = scene.text || '无描述';
+
+            // 更新状态
+            let statusText = '';
+            Object.entries(gameState.playerStats).forEach(([k, v]) => {
+                statusText += `${k}: ${v} | `;
+            });
+            Object.entries(gameState.npcFavor).forEach(([k, v]) => {
+                statusText += `${k}: ${v} | `;
+            });
+            document.getElementById('gameStatus').innerText = statusText.slice(0, -3);
+
+            // 更新选项
+            const optionsEl = document.getElementById('gameOptions');
+            optionsEl.innerHTML = '';
+            scene.options.forEach(option => {
+                if (!checkGameCondition(option.required)) return;
+
+                const btn = document.createElement('button');
+                btn.innerText = option.text;
+                btn.onclick = () => chooseGameOption(option);
+                optionsEl.appendChild(btn);
+            });
+
+            // 更新背包
+            const backpackText = gameState.backpack.map(item => item.name).join('、') || '空';
+            document.getElementById('gameBackpack').innerText = `背包: ${backpackText}`;
+        }
+
+        function checkGameCondition(required) {
+            for (const [key, value] of Object.entries(required)) {
+                if (gameState.playerStats[key] < value) return false;
+                if (gameState.npcFavor[key] < value) return false;
+            }
+            return true;
+        }
+
+        function chooseGameOption(option) {
+            if (option
